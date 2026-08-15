@@ -70,7 +70,44 @@
   </style>
 </head>
 <body>
+<audio id="musica" loop>
+  <source src="./musica.mp3" type="audio/mpeg">
+</audio>
 
+<button id="btnMusica">🎵</button>
+
+<style>
+  #btnMusica {
+    position: fixed;
+    bottom: 70px;
+    right: 20px;
+    z-index: 10;
+    width: 50px;
+    height: 50px;
+    border: none;
+    border-radius: 50%;
+    background: rgba(255, 42, 141, 0.8);
+    color: white;
+    font-size: 22px;
+    cursor: pointer;
+    box-shadow: 0 0 15px rgba(255, 42, 141, 0.7);
+  }
+</style>
+
+<script>
+  const musica = document.getElementById("musica");
+  const btnMusica = document.getElementById("btnMusica");
+
+  btnMusica.addEventListener("click", () => {
+    if (musica.paused) {
+      musica.play();
+      btnMusica.textContent = "🔊";
+    } else {
+      musica.pause();
+      btnMusica.textContent = "🎵";
+    }
+  });
+</script>
   <div class="overlay-text">
     <h1>FELIZ CUMPLEMES GORDA</h1>
     <p>Por Mas Meses,Años,Decadas Juntos y Seguir Disfrutando Momentos <br><span style="font-size:0.9rem; color:#ff9ebb;">Te Amo Mi Cachetosita Hermosa</span></p>
