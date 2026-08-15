@@ -246,139 +246,36 @@
       }
 
       // CONTROLES TÁCTILES
-      // CONTROLES TÁCTILES + ZOOM CON PELLIZCO
-let isDragging = false;
-let previousMousePosition = { x: 0, y: 0 };
+      let isDragging = false;
+      let previousMousePosition = { x: 0, y: 0 };
 
-let initialPinchDistance = 0;
-let initialCameraZ = camera.position.z;
+      const onPointerDown = (e) => {
+        isDragging = true;
+        previousMousePosition = {
+          x: e.touches ? e.touches[0].clientX : e.clientX,
+          y: e.touches ? e.touches[0].clientY : e.clientY
+        };
+      };
 
-// Calcular distancia entre los dos dedos
-const getPinchDistance = (touches) => {
-  const dx = touches[0].clientX - touches[1].clientX;
-  const dy = touches[0].clientY - touches[1].clientY;
+      const onPointerMove = (e) => {
+        if (!isDragging) return;
+        const currentX = e.touches ? e.touches[0].clientX : e.clientX;
+        const currentY = e.touches ? e.touches[0].clientY : e.clientY;
 
-  return Math.sqrt(dx * dx + dy * dy);
-};
+        galaxyGroup.rotation.y += (currentX - previousMousePosition.x) * 0.008;
+        galaxyGroup.rotation.x += (currentY - previousMousePosition.y) * 0.005;
 
+        previousMousePosition = { x: currentX, y: currentY };
+      };
 
-// TOCAR LA PANTALLA
-canvas.addEventListener('touchstart', (e) => {
+      const onPointerUp = () => { isDragging = false; };
 
-  // Un dedo: girar galaxia
-  if (e.touches.length === 1) {
-
-    isDragging = true;
-
-    previousMousePosition = {
-      x: e.touches[0].clientX,
-      y: e.touches[0].clientY
-    };
-
-  }
-
-  // Dos dedos: preparar zoom
-  if (e.touches.length === 2) {
-
-    isDragging = false;
-
-    initialPinchDistance =
-      getPinchDistance(e.touches);
-
-    initialCameraZ =
-      camera.position.z;
-  }
-
-}, { passive: false });
-
-
-// MOVER LOS DEDOS
-canvas.addEventListener('touchmove', (e) => {
-
-  e.preventDefault();
-
-  // ==============================
-  // UN DEDO = GIRAR
-  // ==============================
-  if (e.touches.length === 1 && isDragging) {
-
-    const currentX =
-      e.touches[0].clientX;
-
-    const currentY =
-      e.touches[0].clientY;
-
-    galaxyGroup.rotation.y +=
-      (currentX - previousMousePosition.x) * 0.008;
-
-    galaxyGroup.rotation.x +=
-      (currentY - previousMousePosition.y) * 0.005;
-
-    previousMousePosition = {
-      x: currentX,
-      y: currentY
-    };
-  }
-
-
-  // ==============================
-  // DOS DEDOS = PELLIZCAR PARA ZOOM
-  // ==============================
-  if (
-    e.touches.length === 2 &&
-    initialPinchDistance > 0
-  ) {
-
-    const currentPinchDistance =
-      getPinchDistance(e.touches);
-
-    // Si los dedos se separan → acercar
-    // Si los dedos se juntan → alejar
-    const zoom =
-      initialPinchDistance /
-      currentPinchDistance;
-
-    camera.position.z =
-      initialCameraZ * zoom;
-
-    // Limitar el zoom
-    camera.position.z =
-      Math.max(
-        2.5,
-        Math.min(
-          10,
-          camera.position.z
-        )
-      );
-
-    camera.lookAt(0, 0, 0);
-  }
-
-}, { passive: false });
-
-
-// SOLTAR LOS DEDOS
-canvas.addEventListener('touchend', (e) => {
-
-  if (e.touches.length === 0) {
-
-    isDragging = false;
-    initialPinchDistance = 0;
-
-  }
-
-}, { passive: false });
-
-
-// ==============================
-// CONTROLES CON MOUSE
-// ==============================
-
-canvas.addEventListener('mousedown', onPointerDown);
-
-canvas.addEventListener('mousemove', onPointerMove);
-
-window.addEventListener('mouseup', onPointerUp);
+      canvas.addEventListener('mousedown', onPointerDown);
+      canvas.addEventListener('mousemove', onPointerMove);
+      window.addEventListener('mouseup', onPointerUp);
+      canvas.addEventListener('touchstart', onPointerDown, { passive: true });
+      canvas.addEventListener('touchmove', onPointerMove, { passive: true });
+      window.addEventListener('touchend', onPointerUp);
 
       window.addEventListener('resize', () => {
         sizes.width = window.innerWidth;
