@@ -1,0 +1,261 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no">
+  <title>Galaxia de Recuerdos</title>
+  <style>
+    * {
+      margin: 0;
+      padding: 0;
+      box-sizing: border-box;
+      -webkit-tap-highlight-color: transparent;
+    }
+    body, html {
+      width: 100%;
+      height: 100%;
+      overflow: hidden;
+      background-color: #020208;
+      font-family: 'Segoe UI', Roboto, Helvetica, Arial, sans-serif;
+    }
+    #webgl {
+      position: absolute;
+      top: 0;
+      left: 0;
+      width: 100%;
+      height: 100%;
+      z-index: 1;
+      display: block;
+    }
+    .overlay-text {
+      position: absolute;
+      top: 8%;
+      left: 50%;
+      transform: translateX(-50%);
+      color: #ffffff;
+      text-align: center;
+      z-index: 2;
+      pointer-events: none;
+      width: 90%;
+      text-shadow: 0 0 15px rgba(255, 42, 141, 0.8), 0 0 30px rgba(123, 44, 191, 0.6);
+    }
+    .overlay-text h1 {
+      font-size: 2.1rem;
+      font-weight: 400;
+      letter-spacing: 1.5px;
+      margin-bottom: 6px;
+      color: #fff0f5;
+    }
+    .overlay-text p {
+      font-size: 1rem;
+      color: #ffd700;
+      font-weight: 300;
+      opacity: 0.95;
+    }
+    .instructions {
+      position: absolute;
+      bottom: 4%;
+      left: 50%;
+      transform: translateX(-50%);
+      color: rgba(255, 255, 255, 0.7);
+      font-size: 0.8rem;
+      z-index: 2;
+      pointer-events: none;
+      text-align: center;
+      background: rgba(0, 0, 0, 0.5);
+      padding: 5px 16px;
+      border-radius: 15px;
+      backdrop-filter: blur(4px);
+    }
+  </style>
+</head>
+<body>
+
+  <div class="overlay-text">
+    <h1>FELIZ CUMPLEMES GORDA</h1>
+    <p>Por Mas Meses,Años,Decadas Juntos y Seguir Disfrutando Momentos <br><span style="font-size:0.9rem; color:#ff9ebb;">Te Amo Mi Cachetosita Hermosa</span></p>
+  </div>
+
+  <canvas id="webgl"></canvas>
+
+  <div class="instructions">Arrastra para girar | Pellizca para zoom</div>
+
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/r128/three.min.js"></script>
+
+  <script>
+    window.addEventListener('DOMContentLoaded', () => {
+      const canvas = document.querySelector('#webgl');
+      const scene = new THREE.Scene();
+      scene.fog = new THREE.FogExp2(0x020208, 0.08);
+
+      const sizes = { width: window.innerWidth, height: window.innerHeight };
+
+      const camera = new THREE.PerspectiveCamera(60, sizes.width / sizes.height, 0.1, 100);
+      camera.position.set(0, 2.5, 5.5);
+      camera.lookAt(0, 0, 0);
+
+      const renderer = new THREE.WebGLRenderer({ canvas: canvas, antialias: true, alpha: false });
+      renderer.setSize(sizes.width, sizes.height);
+      renderer.setPixelRatio(Math.min(window.devicePixelRatio, 2));
+      renderer.setClearColor(0x020208, 1);
+
+      const galaxyGroup = new THREE.Group();
+      scene.add(galaxyGroup);
+
+      const parameters = {
+        stardustCount: 40000,
+        stardustSize: 0.015,
+        radius: 4.5,
+        branches: 4,
+        insideColor: '#ff2a8d',
+        outsideColor: '#6a0dad'
+      };
+
+      // 1. POLVO ESTELAR
+      const geometry = new THREE.BufferGeometry();
+      const positions = new Float32Array(parameters.stardustCount * 3);
+      const colors = new Float32Array(parameters.stardustCount * 3);
+
+      const colorInside = new THREE.Color(parameters.insideColor);
+      const colorOutside = new THREE.Color(parameters.outsideColor);
+
+      for (let i = 0; i < parameters.stardustCount; i++) {
+        const i3 = i * 3;
+        const r = Math.random() * parameters.radius;
+        const branchAngle = ((i % parameters.branches) / parameters.branches) * Math.PI * 2;
+        const spinAngle = r * 1.2;
+
+        const randomX = (Math.pow(Math.random(), 3) * (Math.random() < 0.5 ? 1 : -1) * 0.4) * r;
+        const randomY = (Math.pow(Math.random(), 3) * (Math.random() < 0.5 ? 1 : -1) * 0.4) * r;
+        const randomZ = (Math.pow(Math.random(), 3) * (Math.random() < 0.5 ? 1 : -1) * 0.4) * r;
+
+        positions[i3]     = Math.cos(branchAngle + spinAngle) * r + randomX;
+        positions[i3 + 1] = randomY;
+        positions[i3 + 2] = Math.sin(branchAngle + spinAngle) * r + randomZ;
+
+        const mixedColor = colorInside.clone();
+        mixedColor.lerp(colorOutside, r / parameters.radius);
+        colors[i3]     = mixedColor.r;
+        colors[i3 + 1] = mixedColor.g;
+        colors[i3 + 2] = mixedColor.b;
+      }
+
+      geometry.setAttribute('position', new THREE.BufferAttribute(positions, 3));
+      geometry.setAttribute('color', new THREE.BufferAttribute(colors, 3));
+
+      const pointsMaterial = new THREE.PointsMaterial({
+        size: parameters.stardustSize,
+        sizeAttenuation: true,
+        depthWrite: false,
+        blending: THREE.AdditiveBlending,
+        vertexColors: true
+      });
+
+      const stardust = new THREE.Points(geometry, pointsMaterial);
+      galaxyGroup.add(stardust);
+
+      // 2. NÚCLEO
+      const core = new THREE.Mesh(
+        new THREE.SphereGeometry(0.35, 16, 16),
+        new THREE.MeshBasicMaterial({ color: 0xff69b4, transparent: true, opacity: 0.8 })
+      );
+      galaxyGroup.add(core);
+
+      // 3. CARGA DIRECTA DE ARCHIVOS CON REDIMENSIONADO AUTOMÁTICO EN MEMORIA
+      const photoGeometry = new THREE.PlaneGeometry(0.8, 0.8);
+
+      const loadOptimizedTexture = (url, mesh) => {
+        const img = new Image();
+        img.crossOrigin = 'Anonymous';
+        img.onload = () => {
+          // Redimensionamos dinámicamente la imagen para no saturar la memoria gráfica del celular
+          const canvasScale = document.createElement('canvas');
+          canvasScale.width = 512;
+          canvasScale.height = 512;
+          const ctx = canvasScale.getContext('2d');
+          ctx.drawImage(img, 0, 0, 512, 512);
+
+          const texture = new THREE.CanvasTexture(canvasScale);
+          texture.minFilter = THREE.LinearFilter;
+          mesh.material.map = texture;
+          mesh.material.needsUpdate = true;
+        };
+        img.src = url;
+      };
+
+      for (let i = 1; i <= 12; i++) {
+        // Material inicial transparente
+        const photoMaterial = new THREE.MeshBasicMaterial({
+          side: THREE.DoubleSide,
+          transparent: true,
+          opacity: 0.95
+        });
+
+        const photoMesh = new THREE.Mesh(photoGeometry, photoMaterial);
+
+        const radius = (i / 12) * (parameters.radius * 0.75) + 0.6;
+        const branchAngle = ((i % parameters.branches) / parameters.branches) * Math.PI * 2;
+        const spinAngle = radius * 1.2;
+
+        photoMesh.position.x = Math.cos(branchAngle + spinAngle) * radius;
+        photoMesh.position.y = (Math.random() - 0.5) * 0.3;
+        photoMesh.position.z = Math.sin(branchAngle + spinAngle) * radius;
+        photoMesh.rotation.y = - (branchAngle + spinAngle);
+
+        galaxyGroup.add(photoMesh);
+
+        // Cargamos Foto1.jpg, Foto2.jpg, etc.
+        loadOptimizedTexture(`./Foto${i}.jpeg`, photoMesh);
+      }
+
+      // CONTROLES TÁCTILES
+      let isDragging = false;
+      let previousMousePosition = { x: 0, y: 0 };
+
+      const onPointerDown = (e) => {
+        isDragging = true;
+        previousMousePosition = {
+          x: e.touches ? e.touches[0].clientX : e.clientX,
+          y: e.touches ? e.touches[0].clientY : e.clientY
+        };
+      };
+
+      const onPointerMove = (e) => {
+        if (!isDragging) return;
+        const currentX = e.touches ? e.touches[0].clientX : e.clientX;
+        const currentY = e.touches ? e.touches[0].clientY : e.clientY;
+
+        galaxyGroup.rotation.y += (currentX - previousMousePosition.x) * 0.008;
+        galaxyGroup.rotation.x += (currentY - previousMousePosition.y) * 0.005;
+
+        previousMousePosition = { x: currentX, y: currentY };
+      };
+
+      const onPointerUp = () => { isDragging = false; };
+
+      canvas.addEventListener('mousedown', onPointerDown);
+      canvas.addEventListener('mousemove', onPointerMove);
+      window.addEventListener('mouseup', onPointerUp);
+      canvas.addEventListener('touchstart', onPointerDown, { passive: true });
+      canvas.addEventListener('touchmove', onPointerMove, { passive: true });
+      window.addEventListener('touchend', onPointerUp);
+
+      window.addEventListener('resize', () => {
+        sizes.width = window.innerWidth;
+        sizes.height = window.innerHeight;
+        camera.aspect = sizes.width / sizes.height;
+        camera.updateProjectionMatrix();
+        renderer.setSize(sizes.width, sizes.height);
+      });
+
+      const clock = new THREE.Clock();
+      const animate = () => {
+        if (!isDragging) galaxyGroup.rotation.y = clock.getElapsedTime() * 0.08;
+        renderer.render(scene, camera);
+        requestAnimationFrame(animate);
+      };
+      animate();
+    });
+  </script>
+</body>
+</html>
